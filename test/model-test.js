@@ -16,8 +16,8 @@ export const model1 = {
     namespace,
     state: {
         count: 1,
-        sum:0,
-        name:'rose'
+        sum: 0,
+        name: 'rose',
     },
     effects: {
         *changeCount({ payload: { count } }, { put, call, select }) {
@@ -36,10 +36,17 @@ export const model1 = {
         *throwError2({ payload: { error } }, { call }) {
             yield call(mockAsyncError, error);
         },
+
+        *dispachAction({ payload: { value } }, { put }) {
+            yield put({
+                type: 'updateState',
+                payload: { dispachAction: value },
+            });
+        },
     },
     reducers: {
         updateState(state, { payload }) {
-            return {...state,...payload}
+            return { ...state, ...payload };
         },
     },
 };

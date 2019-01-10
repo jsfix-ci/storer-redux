@@ -2,6 +2,8 @@ import { applyMiddleware, combineReducers, compose, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 import * as sagaEffects from 'redux-saga/effects';
 import { isFunction, isPlainObject, isString, extend, isArray } from 'lodash';
+import { loadingReducer } from './loading.reducer';
+import { logger } from './logger';
 
 const { takeEvery, takeLatest, throttle } = sagaEffects;
 
@@ -16,44 +18,35 @@ function assert(condition, message) {
 }
 
 //namespace reserved word
-const reservedWord = ['router', 'loading'],
+const reservedWord = ['loading', 'status'],
     separator = '/';
 
 export function createStorer(config = {}) {
-    let _config = {
+    const { reducers, ...rest } = config;
+    const _config = {
         initialState: {},
         onError: () => void 0,
         extraEnhancers: [],
         model: [],
-        usedInVue: false,
         integrateLoading: false,
+        ...rest,
     };
-    if (isPlainObject(config)) {
-        _config = extend(_config, config);
-    }
-
     const app = {
-        reducers: {},
+        reducers: { ...reducers },
         sagaMiddleware: createSagaMiddleware(),
         namespace: reservedWord.slice(0),
         config: _config,
     };
     //integrate loading
     if (app.config.integrateLoading) {
-        app.reducers.loading = (state = { effects: {} }, { type, payload }) => {
-            if (type === 'loading') {
-                let { effects, ...other } = payload;
-                return {
-                    ...state,
-                    effects: { ...state.effects, ...effects },
-                    ...other,
-                };
-            }
-            return state;
-        };
+        app.reducers.loading = loadingReducer;
     }
 
-    init(app, _config);
+    function addModel(model) {
+        _addModel(app, model);
+    }
+
+    init(app);
 
     if (isArray(_config.model)) {
         _config.model.forEach((model) => {
@@ -66,10 +59,6 @@ export function createStorer(config = {}) {
         addModel,
         ...other,
     };
-
-    function addModel(model) {
-        _addModel(app, model);
-    }
 }
 
 // helper
@@ -77,10 +66,9 @@ export function createStorer(config = {}) {
 /**
  *app init :createStore & rewrite handleError
  * @param app
- * @param config
  */
 function init(app) {
-    const reducer = getReducer(app),
+    const reducer = getCombinedReducer(app),
         enhancers = getEnhancers(app);
     app.store = createStore(reducer, compose(...enhancers));
     app.handleError = function(desc) {
@@ -102,7 +90,7 @@ function init(app) {
  * @private
  */
 function _addModel(app, model) {
-    assert(isPlainObject(model), 'model should be object');
+    assert(isPlainObject(model), 'model should be a object');
     assert(
         isString(model.namespace),
         `namespace should be string but got ${typeof namespace}`,
@@ -137,9 +125,9 @@ function _addModel(app, model) {
     app.namespace.push(_model.namespace);
 
     //create reducer and replace reducer
-    const _reducer = createReducer(app, _model);
+    const _reducer = wrapReducers(app, _model);
     app.reducers = extend({}, app.reducers, { [_model.namespace]: _reducer });
-    app.store.replaceReducer(getReducer(app));
+    app.store.replaceReducer(getCombinedReducer(app));
 
     //create saga
     if (isPlainObject(_model.effects)) {
@@ -148,11 +136,11 @@ function _addModel(app, model) {
 }
 
 /**
- * combineReducers
+ * getCombinedReducer
  * @param app
  * @returns {*}
  */
-function getReducer(app) {
+function getCombinedReducer(app) {
     if (app.reducers) {
         return combineReducers(app.reducers);
     } else {
@@ -170,15 +158,6 @@ function getEnhancers(app) {
     const { extraEnhancers } = app.config,
         { sagaMiddleware } = app,
         devtools = [];
-
-    const logger = (store) => (next) => (action) => {
-        // eslint-disable-next-line
-        console.log('dispatching:', action);
-        const result = next(action);
-        // eslint-disable-next-line
-        console.log('next state:', store.getState());
-        return result;
-    };
 
     if (process.env.NODE_ENV !== 'production') {
         try {
@@ -201,12 +180,12 @@ function getEnhancers(app) {
 }
 
 /**
- * createReducer
+ * wrapReducers
  * @param app
  * @param model
  * @returns {Function}
  */
-function createReducer(app, model) {
+function wrapReducers(app, model) {
     const { config } = app;
     const { namespace, reducers } = model;
     const initialState = extend(
@@ -249,12 +228,12 @@ function createSaga(app, model) {
 }
 
 /**
- * prefixActionType
+ * wrapPutFn
  * @param namespace
  * @returns {{put: put}}
  */
-function prefixActionType(namespace) {
-    function put(action) {
+function wrapPutFn(namespace) {
+    return function put(action) {
         if (isPlainObject(action)) {
             //no prefix only when action.prefix === false
             if (action.prefix === false) return sagaEffects.put(action);
@@ -264,18 +243,16 @@ function prefixActionType(namespace) {
                 if (type.indexOf(separator) > 0) {
                     return sagaEffects.put(action);
                 } else {
-                    action.type = namespace + separator + type;
+                    action.type = `${namespace}${separator}${type}`;
                     return sagaEffects.put(action);
                 }
             } else {
-                throw new Error('action type is not string!');
+                throw new Error(`action's type is not string!`);
             }
         } else {
             throw new Error('action is not a plain object!');
         }
-    }
-
-    return { put };
+    };
 }
 
 /**
@@ -317,7 +294,7 @@ function createWatcher(namespace, key, effect, app) {
 
             yield fn(action, {
                 ...sagaEffects,
-                ...prefixActionType(namespace),
+                put: wrapPutFn(namespace),
             });
         } catch (e) {
             err = e;

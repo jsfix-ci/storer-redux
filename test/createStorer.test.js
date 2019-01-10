@@ -34,6 +34,16 @@ test('Get initial state', () => {
     expect(state[model1Namespace].count).toBe(1);
 });
 
+test('Dispatch action from effects(prefix action\'s type)',()=>{
+    appDemo.dispatch({
+        type: model1Namespace + '/dispachAction',
+        payload: {
+            value: 'success',
+        },
+    });
+    expect(appDemo.getState()[model1Namespace].dispachAction).toBe('success');
+})
+
 test('Dispatch action(effects)', (done) => {
     appDemo.dispatch({
         type: model1Namespace + '/changeCount',
@@ -100,6 +110,25 @@ test('CreateStorer with initialState and model ', () => {
         model: [model1],
     });
 
+    expect(app.getState()[model1Namespace].name).toBe('jack');
+    expect(app.getState()[model1Namespace].count).toBe(1);
+});
+
+test('CreateStorer with reducers', () => {
+    const app = createStorer({
+        initialState: {
+            [model1Namespace]: {
+                name: 'jack',
+            },
+        },
+        reducers:{
+            route:(state={location:'/path'},action)=>{
+                return state
+            }
+        },
+        model: [model1],
+    });
+    expect(app.getState().route.location).toBe('/path');
     expect(app.getState()[model1Namespace].name).toBe('jack');
     expect(app.getState()[model1Namespace].count).toBe(1);
 });
