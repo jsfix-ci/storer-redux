@@ -1,13 +1,13 @@
 import { createStorer } from '../src/index';
 import { model1, namespace as model1Namespace } from './model-test';
 import { createStore } from 'redux';
-import { isFunction } from 'lodash';
+import { isFunction, uniqWith, isEqual } from 'lodash';
 
 let err = null,
     errorCount = 0;
 
 const appDemo = createStorer({
-    integrateLoading:true,
+    integrateLoading: true,
     onError: (error) => {
         (err = error), errorCount++;
     },
@@ -34,7 +34,7 @@ test('Get initial state', () => {
     expect(state[model1Namespace].count).toBe(1);
 });
 
-test('Dispatch action from effects(prefix action\'s type)',()=>{
+test("Dispatch action from effects(prefix action's type)", () => {
     appDemo.dispatch({
         type: model1Namespace + '/dispachAction',
         payload: {
@@ -42,7 +42,7 @@ test('Dispatch action from effects(prefix action\'s type)',()=>{
         },
     });
     expect(appDemo.getState()[model1Namespace].dispachAction).toBe('success');
-})
+});
 
 test('Dispatch action(effects)', (done) => {
     appDemo.dispatch({
@@ -121,14 +121,95 @@ test('CreateStorer with reducers', () => {
                 name: 'jack',
             },
         },
-        reducers:{
-            route:(state={location:'/path'},action)=>{
-                return state
-            }
+        reducers: {
+            route: (state = { location: '/path' }, action) => {
+                return state;
+            },
         },
         model: [model1],
     });
     expect(app.getState().route.location).toBe('/path');
     expect(app.getState()[model1Namespace].name).toBe('jack');
     expect(app.getState()[model1Namespace].count).toBe(1);
+});
+
+test('CreateStorer with effectStatusWatch', (done) => {
+    const app = createStorer({
+        initialState: {
+            [model1Namespace]: {
+                name: 'jack',
+            },
+        },
+        reducers: {
+            route: (state = { location: '/path' }, action) => {
+                return state;
+            },
+        },
+        model: [model1],
+        effectStatusWatch: true,
+    });
+    const status = [];
+    expect(app.getState().route.location).toBe('/path');
+    expect(app.getState()[model1Namespace].name).toBe('jack');
+    expect(app.getState()[model1Namespace].count).toBe(1);
+    app.subscribe(() => {
+        const state = app.getState();
+        status.push(state._effectStatus[model1Namespace + '/changeCount']);
+    });
+    app.dispatch({
+        type: model1Namespace + '/changeCount',
+        payload: {
+            count: 3,
+        },
+    });
+    setTimeout(() => {
+        // console.log(status)
+        const s = uniqWith(status, isEqual);
+        // console.log(s)
+        expect(s[0]).toBe(undefined);
+        expect(s[1].status).toBe('loading');
+        expect(s[2].status).toBe('success');
+        done();
+    }, 1000);
+});
+
+test('CreateStorer with effectStatusWatch ----error', (done) => {
+    const app = createStorer({
+        initialState: {
+            [model1Namespace]: {
+                name: 'jack',
+            },
+        },
+        reducers: {
+            route: (state = { location: '/path' }, action) => {
+                return state;
+            },
+        },
+        model: [model1],
+        effectStatusWatch: true,
+    });
+    const status = [];
+    expect(app.getState().route.location).toBe('/path');
+    expect(app.getState()[model1Namespace].name).toBe('jack');
+    expect(app.getState()[model1Namespace].count).toBe(1);
+    app.subscribe(() => {
+        const state = app.getState();
+        status.push(state._effectStatus[model1Namespace + '/throwError2']);
+    });
+    app.dispatch({
+        type: model1Namespace + '/throwError2',
+        payload: {
+            error: 3,
+        },
+    });
+    setTimeout(() => {
+        // console.log(status)
+        const s = uniqWith(status, isEqual);
+        // console.log(s)
+        expect(s[0]).toBe(undefined);
+        expect(s[1].status).toBe('loading');
+        expect(s[2].status).toBe('fail');
+        expect(s[2].error).toBe(3);
+        done();
+    }, 1000);
 });
