@@ -8,7 +8,7 @@ import { logger } from './logger';
 const { takeEvery, takeLatest, throttle } = sagaEffects;
 
 function isWindow(win) {
-    return typeof win === 'object' && win.window === win;
+    return typeof win === 'object' && win !== null && win.window === win;
 }
 
 function assert(condition, message) {
@@ -271,6 +271,7 @@ function createWatcher(namespace, key, effect, app) {
         handleError,
         config: { integrateLoading },
     } = app;
+    const actionType = namespace + separator + key;
 
     if (isFunction(effect)) {
         fn = effect;
@@ -287,7 +288,7 @@ function createWatcher(namespace, key, effect, app) {
                 yield sagaEffects.put({
                     type: 'loading',
                     payload: {
-                        effects: { [namespace + separator + key]: true },
+                        effects: { [actionType]: true },
                     },
                 });
             }
@@ -303,7 +304,7 @@ function createWatcher(namespace, key, effect, app) {
             yield sagaEffects.put({
                 type: 'loading',
                 payload: {
-                    effects: { [namespace + separator + key]: false },
+                    effects: { [actionType]: false },
                 },
             });
         }
@@ -316,19 +317,19 @@ function createWatcher(namespace, key, effect, app) {
     switch (type) {
         case 'takeEvery':
             return function*() {
-                yield takeEvery(namespace + separator + key, wrapper);
+                yield takeEvery(actionType, wrapper);
             };
         case 'takeLatest':
             return function*() {
-                yield takeLatest(namespace + separator + key, wrapper);
+                yield takeLatest(actionType, wrapper);
             };
         case 'throttle':
             return function*() {
-                yield throttle(time, namespace + separator + key, wrapper);
+                yield throttle(time, actionType, wrapper);
             };
         default:
             return function*() {
-                yield takeEvery(namespace + separator + key, wrapper);
+                yield takeEvery(actionType, wrapper);
             };
     }
 }
