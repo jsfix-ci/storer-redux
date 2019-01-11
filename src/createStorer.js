@@ -24,6 +24,7 @@ export function createStorer(config = {}) {
         integrateLoading: false,
         effectStatusWatch: false,
         separator: '/',
+        loggerMiddleware: false,
         ...rest,
     };
 
@@ -162,7 +163,7 @@ function getEnhancers(app) {
                 isFunction(window.__REDUX_DEVTOOLS_EXTENSION__)
             ) {
                 devtools.push(window.__REDUX_DEVTOOLS_EXTENSION__());
-            } else {
+            } else if (app.config.loggerMiddleware) {
                 devtools.push(applyMiddleware(logger));
             }
         } catch (e) {
