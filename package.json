@@ -4,7 +4,7 @@
   "description": "storer with redux",
   "main": "dist/index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "build": "babel src -d dist",
     "pb": "npm run test && npm run build && npm publish",
     "precommit": "npm run test && lint-staged"
@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "babel-runtime": "^6.26.0",
+    "immer": "^1.10.4",
     "lodash": "^4.17.11",
     "redux": "^4.0.1",
     "redux-saga": "^0.16.2"

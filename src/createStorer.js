@@ -2,6 +2,7 @@ import { applyMiddleware, combineReducers, compose, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 import * as sagaEffects from 'redux-saga/effects';
 import { isFunction, isPlainObject, isString, extend, isArray } from 'lodash';
+import { produce } from 'immer';
 import { loadingReducer, loading_name } from './loading.reducer';
 import {
     effectStatusReducer,
@@ -25,6 +26,7 @@ export function createStorer(config = {}) {
         effectStatusWatch: false,
         separator: '/',
         loggerMiddleware: false,
+        integrateImmer: false,
         ...rest,
     };
 
@@ -184,24 +186,37 @@ function getEnhancers(app) {
  */
 function wrapReducers(app, model) {
     const {
-        config: { initialState, separator },
+        config: { initialState, separator, integrateImmer },
     } = app;
     const { namespace, reducers } = model;
     const _initialState = extend(
+        {},
         model.state,
         isPlainObject(initialState) ? initialState[namespace] : {},
     );
-    return function(state = _initialState, { type, ...other }) {
+    return function(state, action) {
+        const { type } = action;
         const names = type.split(separator);
-        let newState = state;
+        const reducer = reducers[names[1]];
+        const _state = state === undefined ? _initialState : state;
+
         if (
             names.length === 2 &&
             namespace === names[0] &&
-            isFunction(reducers[names[1]])
+            isFunction(reducer)
         ) {
-            newState = reducers[names[1]](state, other) || state;
+            if (integrateImmer) {
+                return produce(_state, (draft) => {
+                    reducer(draft, action);
+                });
+            }
+            return reducer(_state, action);
         }
-        return newState;
+        return integrateImmer
+            ? produce(state === undefined ? {} : state, (draft) => {
+                  Object.assign(draft, _initialState);
+              })
+            : _state;
     };
 }
 
