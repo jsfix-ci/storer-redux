@@ -7,5 +7,5 @@ export {
     isStatusSuccess,
     isStatusUninitialized,
 } from './effectStatus.reducer';
-
-export { createStorer, getActionCreatorsAndTypes } from './createStorer';
+export { getActionCreatorsAndTypes } from './getActionCreatorsAndTypes';
+export { createStorer } from './createStorer';
