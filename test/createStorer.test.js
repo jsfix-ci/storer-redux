@@ -5,7 +5,12 @@ import {
     isStatusLoading,
     isStatusUninitialized,
 } from '../src/index';
-import { model1, namespace as model1Namespace, actionCreators } from './model-test';
+import {
+    model1,
+    namespace as model1Namespace,
+    actionCreators,
+    actionTypes,
+} from './model-test';
 import { createStore } from 'redux';
 import { isFunction, uniqWith, isEqual } from 'lodash';
 
@@ -157,12 +162,12 @@ test('CreateStorer with effectStatusWatch', (done) => {
         const state = app.getState();
         status.push(state._effectStatus[model1Namespace + '/changeCount']);
     });
-    app.dispatch({
-        type: model1Namespace + '/changeCount',
-        payload: {
-            count: 3,
-        },
-    });
+    expect(isStatusUninitialized(app.getState(), actionTypes.changeCount)).toBe(
+        true,
+    );
+    app.dispatch(actionCreators.changeCount({ count: 3 }));
+    expect(isStatusLoading(app.getState(), actionTypes.changeCount)).toBe(true);
+
     setTimeout(() => {
         // console.log(status)
         const s = uniqWith(status, isEqual);
@@ -170,6 +175,10 @@ test('CreateStorer with effectStatusWatch', (done) => {
         expect(s[0]).toBe(undefined);
         expect(s[1].status).toBe('loading');
         expect(s[2].status).toBe('success');
+        expect(isStatusSuccess(app.getState(), actionTypes.changeCount)).toBe(
+            true,
+        );
+
         done();
     }, 1000);
 });
@@ -188,6 +197,7 @@ test('CreateStorer with effectStatusWatch ----error', (done) => {
         },
         model: [model1],
         effectStatusWatch: true,
+        // loggerMiddleware:true,
     });
     const status = [];
     expect(app.getState().route.location).toBe('/path');
@@ -197,12 +207,13 @@ test('CreateStorer with effectStatusWatch ----error', (done) => {
         const state = app.getState();
         status.push(state._effectStatus[model1Namespace + '/throwError2']);
     });
-    app.dispatch({
-        type: model1Namespace + '/throwError2',
-        payload: {
-            error: 3,
-        },
-    });
+    expect(isStatusUninitialized(app.getState(), actionTypes.throwError2)).toBe(
+        true,
+    );
+    app.dispatch(actionCreators.throwError2({ error: 3 }));
+    // console.log(app.getState());
+    expect(isStatusLoading(app.getState(), actionTypes.throwError2)).toBe(true);
+
     setTimeout(() => {
         // console.log(status)
         const s = uniqWith(status, isEqual);
@@ -211,6 +222,10 @@ test('CreateStorer with effectStatusWatch ----error', (done) => {
         expect(s[1].status).toBe('loading');
         expect(s[2].status).toBe('fail');
         expect(s[2].error).toBe(3);
+
+        expect(isStatusFail(app.getState(), actionTypes.throwError2)).toBe(
+            true,
+        );
         done();
     }, 1000);
 });
