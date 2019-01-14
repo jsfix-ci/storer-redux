@@ -1,3 +1,4 @@
+import { getActionCreatorsAndTypes } from '../src/index';
 export const namespace = 'model1';
 
 function asyncFn(n) {
@@ -50,3 +51,7 @@ export const model1 = {
         },
     },
 };
+
+export const { actionCreators, actionTypes } = getActionCreatorsAndTypes(
+    model1,
+);

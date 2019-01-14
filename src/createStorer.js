@@ -24,10 +24,10 @@ export function createStorer(config = {}) {
         model: [],
         integrateLoading: false,
         effectStatusWatch: false,
-        separator: '/',
         loggerMiddleware: false,
         integrateImmer: false,
         ...rest,
+        separator: '/',
     };
 
     const app = {
@@ -67,6 +67,20 @@ export function createStorer(config = {}) {
 }
 
 // helper
+
+export function getActionCreatorsAndTypes(model) {
+    const { namespace, effects, reducers } = model;
+    const creators = {};
+    const types = {};
+    [...Object.keys(effects), ...Object.keys(reducers)].forEach((key) => {
+        const type = `${namespace}/${key}`;
+        creators[key] = (payload) => {
+            return { type, payload };
+        };
+        types[key] = type;
+    });
+    return { actionCreators: creators, actionTypes: types };
+}
 
 /**
  *app init :createStore & rewrite handleError

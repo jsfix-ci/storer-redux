@@ -19,7 +19,4 @@ export const model = {
             state.info.a = a;
         },
     },
-    updateObj(state, { payload }) {
-        Object.assign(state.obj, payload);
-    },
 };

@@ -1,5 +1,11 @@
-import { createStorer } from '../src/index';
-import { model1, namespace as model1Namespace } from './model-test';
+import {
+    createStorer,
+    isStatusFail,
+    isStatusSuccess,
+    isStatusLoading,
+    isStatusUninitialized,
+} from '../src/index';
+import { model1, namespace as model1Namespace, actionCreators } from './model-test';
 import { createStore } from 'redux';
 import { isFunction, uniqWith, isEqual } from 'lodash';
 
@@ -35,12 +41,7 @@ test('Get initial state', () => {
 });
 
 test("Dispatch action from effects(prefix action's type)", () => {
-    appDemo.dispatch({
-        type: model1Namespace + '/dispachAction',
-        payload: {
-            value: 'success',
-        },
-    });
+    appDemo.dispatch(actionCreators.dispachAction({ value: 'success' }));
     expect(appDemo.getState()[model1Namespace].dispachAction).toBe('success');
 });
 
