@@ -62,6 +62,12 @@ test('Dispatch action(effects)', (done) => {
         appDemo.getState().loading.effects[`${model1Namespace}/changeCount`],
     ).toBe(true);
     expect(appDemo.getState()[model1Namespace].count).toBe(1);
+    appDemo.dispatch(actionCreators.takeLatest());
+    expect(appDemo.getState()[model1Namespace].takeLatestSuccess).toBe(true);
+    appDemo.dispatch(actionCreators.throttle());
+    expect(appDemo.getState()[model1Namespace].throttleSuccess).toBe(true);
+    appDemo.dispatch(actionCreators.dispachActionWithCompleteType());
+    expect(appDemo.getState()[model1Namespace].dispachActionWithCompleteTypeSuccess).toBe(true);
     setTimeout(() => {
         expect(appDemo.getState()[model1Namespace].count).toBe(3);
         expect(
@@ -229,3 +235,20 @@ test('CreateStorer with effectStatusWatch ----error', (done) => {
         done();
     }, 1000);
 });
+
+test('addModel',()=>{
+    const storer = createStorer();
+
+    expect(()=>{
+        storer.addModel()
+    }).toThrow()
+    expect(()=>{
+        storer.addModel({})
+    }).toThrow()
+    expect(()=>{
+        storer.addModel({namespace:'asdfasdf'})
+    }).toThrow()
+    expect(()=>{
+        storer.addModel({namespace:'asdfasdf',state:{}})
+    }).toThrow()
+})

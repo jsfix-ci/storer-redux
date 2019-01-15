@@ -361,10 +361,6 @@ function createWatcher(namespace, key, effect, app) {
     };
 
     switch (type) {
-        case 'takeEvery':
-            return function*() {
-                yield takeEvery(actionType, wrapper);
-            };
         case 'takeLatest':
             return function*() {
                 yield takeLatest(actionType, wrapper);

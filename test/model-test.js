@@ -44,6 +44,30 @@ export const model1 = {
                 payload: { dispachAction: value },
             });
         },
+        *dispachActionWithCompleteType(action, { put }) {
+            yield put({
+                type: namespace+'/updateState',
+                payload: { dispachActionWithCompleteTypeSuccess: true },
+            });
+        },
+        takeLatest: [
+            function*(action, { put }) {
+                yield put({
+                    type: 'updateState',
+                    payload: { takeLatestSuccess: true },
+                });
+            },
+            { type: 'takeLatest' },
+        ],
+        throttle: [
+            function*(action, { put }) {
+                yield put({
+                    type: 'updateState',
+                    payload: { throttleSuccess: true },
+                });
+            },
+            { type: 'throttle' },
+        ],
     },
     reducers: {
         updateState(state, { payload }) {
