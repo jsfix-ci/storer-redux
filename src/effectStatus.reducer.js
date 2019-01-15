@@ -1,4 +1,5 @@
 import { isPlainObject } from 'lodash';
+import { produce } from 'immer';
 export const effectStatus_name = '_effectStatus';
 
 export const status_loading = 'loading';
@@ -36,3 +37,9 @@ export const effectStatusReducer = (state = {}, { type, payload }) => {
     }
     return state;
 };
+
+export const effectStatusReducerImmer = produce((draft, { type, payload }) => {
+    if (type === effectStatus_name) {
+        Object.assign(draft, payload);
+    }
+}, {});

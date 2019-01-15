@@ -3,9 +3,14 @@ import createSagaMiddleware from 'redux-saga';
 import * as sagaEffects from 'redux-saga/effects';
 import { isFunction, isPlainObject, isString, extend, isArray } from 'lodash';
 import { produce } from 'immer';
-import { loadingReducer, loading_name } from './loading.reducer';
+import {
+    loadingReducer,
+    loadingReducerImmer,
+    loading_name,
+} from './loading.reducer';
 import {
     effectStatusReducer,
+    effectStatusReducerImmer,
     effectStatus_name,
     status_fail,
     status_loading,
@@ -38,12 +43,16 @@ export function createStorer(config = {}) {
     };
     //integrate loading
     if (app.config.integrateLoading) {
-        app.reducers.loading = loadingReducer;
+        app.reducers.loading = app.config.integrateImmer
+            ? loadingReducerImmer
+            : loadingReducer;
         app.namespace.push(loading_name);
     }
 
     if (app.config.effectStatusWatch) {
-        app.reducers[effectStatus_name] = effectStatusReducer;
+        app.reducers[effectStatus_name] = app.config.integrateImmer
+            ? effectStatusReducerImmer
+            : effectStatusReducer;
         app.namespace.push(effectStatus_name);
     }
 
