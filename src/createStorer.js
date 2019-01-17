@@ -71,6 +71,9 @@ export function createStorer(config = {}) {
     const { replaceReducer, ...other } = app.store;
     return {
         addModel,
+        hasNamespace(str) {
+            return app.namespace.indexOf(str) > -1;
+        },
         ...other,
     };
 }

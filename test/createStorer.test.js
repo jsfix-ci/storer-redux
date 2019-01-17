@@ -252,3 +252,13 @@ test('addModel',()=>{
         storer.addModel({namespace:'asdfasdf',state:{}})
     }).toThrow()
 })
+
+test('hasNamespace',()=>{
+    const storer = createStorer({
+        integrateLoading:true,
+        model:[model1],
+    })
+    expect(storer.hasNamespace('loading')).toBe(true);
+    expect(storer.hasNamespace(model1Namespace)).toBe(true);
+    expect(storer.hasNamespace('aasdf')).toBe(false);
+})
