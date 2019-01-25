@@ -45,4 +45,5 @@ test('createStorer with immer', () => {
     expect(()=>{
         storer.getState()._effectStatus[actionTypes.effectsTest]=132412341
     }).toThrow();
+    expect(storer.getState()[namespace].info.a).toBe(666);
 });

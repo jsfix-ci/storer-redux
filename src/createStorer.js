@@ -207,10 +207,20 @@ function wrapReducers(app, model) {
         isPlainObject(initialState) ? initialState[namespace] : {},
     );
     return function(state, action) {
+        const _state =
+            state === undefined
+                ? integrateImmer
+                    ? produce(state === undefined ? {} : state, (draft) => {
+                          // change _initialState to readonly
+
+                          Object.assign(draft, _initialState);
+                      })
+                    : _initialState
+                : state;
+
         const { type } = action;
         const names = type.split(separator);
         const reducer = reducers[names[1]];
-        const _state = state === undefined ? _initialState : state;
 
         if (
             names.length === 2 &&
@@ -224,11 +234,7 @@ function wrapReducers(app, model) {
             }
             return reducer(_state, action);
         }
-        return integrateImmer
-            ? produce(state === undefined ? {} : state, (draft) => {
-                  Object.assign(draft, _initialState);
-              })
-            : _state;
+        return _state;
     };
 }
 
