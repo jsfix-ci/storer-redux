@@ -8,5 +8,5 @@ export {
     isStatusUninitialized,
 } from './effectStatus.reducer';
 export { getActionCreatorsAndTypes } from './getActionCreatorsAndTypes';
-export { createStorer } from './createStorer';
+export { createStorer, assert } from './createStorer';
 export { applyMiddleware } from 'redux';

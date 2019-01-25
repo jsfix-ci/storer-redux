@@ -392,7 +392,7 @@ function isWindow(win) {
     return typeof win === 'object' && win !== null && win.window === win;
 }
 
-function assert(condition, message) {
+export function assert(condition, message) {
     if (!condition) {
         throw new Error(message);
     }
