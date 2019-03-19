@@ -28,6 +28,10 @@ export const isStatusFail = (state, type) => {
     );
 };
 
+export const getStatus = (state, type) => {
+    return state[effectStatus_name][type] || {};
+};
+
 export const effectStatusReducer = (state = {}, { type, payload }) => {
     if (type === effectStatus_name) {
         return {

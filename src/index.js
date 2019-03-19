@@ -6,6 +6,7 @@ export {
     isStatusLoading,
     isStatusSuccess,
     isStatusUninitialized,
+    getStatus,
 } from './effectStatus.reducer';
 export { getActionCreatorsAndTypes } from './getActionCreatorsAndTypes';
 export { createStorer, assert } from './createStorer';

@@ -4,6 +4,7 @@ import {
     isStatusSuccess,
     isStatusLoading,
     isStatusUninitialized,
+    getStatus,
 } from '../src/index';
 import {
     model1,
@@ -67,7 +68,10 @@ test('Dispatch action(effects)', (done) => {
     appDemo.dispatch(actionCreators.throttle());
     expect(appDemo.getState()[model1Namespace].throttleSuccess).toBe(true);
     appDemo.dispatch(actionCreators.dispachActionWithCompleteType());
-    expect(appDemo.getState()[model1Namespace].dispachActionWithCompleteTypeSuccess).toBe(true);
+    expect(
+        appDemo.getState()[model1Namespace]
+            .dispachActionWithCompleteTypeSuccess,
+    ).toBe(true);
     setTimeout(() => {
         expect(appDemo.getState()[model1Namespace].count).toBe(3);
         expect(
@@ -177,6 +181,7 @@ test('CreateStorer with effectStatusWatch', (done) => {
     setTimeout(() => {
         // console.log(status)
         const s = uniqWith(status, isEqual);
+        const stateCurrent = app.getState();
         // console.log(s)
         expect(s[0]).toBe(undefined);
         expect(s[1].status).toBe('loading');
@@ -184,6 +189,13 @@ test('CreateStorer with effectStatusWatch', (done) => {
         expect(isStatusSuccess(app.getState(), actionTypes.changeCount)).toBe(
             true,
         );
+        expect(
+            stateCurrent._effectStatus[model1Namespace + '/changeCount'] ===
+                getStatus(stateCurrent, model1Namespace + '/changeCount'),
+        ).toBe(true);
+        expect(
+                getStatus(stateCurrent, model1Namespace + '/none'),
+        ).toEqual({});
 
         done();
     }, 1000);
@@ -236,29 +248,29 @@ test('CreateStorer with effectStatusWatch ----error', (done) => {
     }, 1000);
 });
 
-test('addModel',()=>{
+test('addModel', () => {
     const storer = createStorer();
 
-    expect(()=>{
-        storer.addModel()
-    }).toThrow()
-    expect(()=>{
-        storer.addModel({})
-    }).toThrow()
-    expect(()=>{
-        storer.addModel({namespace:'asdfasdf'})
-    }).toThrow()
-    expect(()=>{
-        storer.addModel({namespace:'asdfasdf',state:{}})
-    }).toThrow()
-})
+    expect(() => {
+        storer.addModel();
+    }).toThrow();
+    expect(() => {
+        storer.addModel({});
+    }).toThrow();
+    expect(() => {
+        storer.addModel({ namespace: 'asdfasdf' });
+    }).toThrow();
+    expect(() => {
+        storer.addModel({ namespace: 'asdfasdf', state: {} });
+    }).toThrow();
+});
 
-test('hasNamespace',()=>{
+test('hasNamespace', () => {
     const storer = createStorer({
-        integrateLoading:true,
-        model:[model1],
-    })
+        integrateLoading: true,
+        model: [model1],
+    });
     expect(storer.hasNamespace('loading')).toBe(true);
     expect(storer.hasNamespace(model1Namespace)).toBe(true);
     expect(storer.hasNamespace('aasdf')).toBe(false);
-})
+});
