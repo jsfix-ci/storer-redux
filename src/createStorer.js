@@ -401,7 +401,7 @@ function isWindow(win) {
 }
 
 function actionSanitizer(action) {
-    return typeof action.payload === 'object' &&
+    return typeof action.payload instanceof Object &&
         action.payload.target &&
         action.payload.type
         ? { ...action, payload: '<<EVENT>>' }
