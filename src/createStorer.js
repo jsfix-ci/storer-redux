@@ -176,7 +176,9 @@ function getEnhancers(app) {
                 isWindow(window) &&
                 isFunction(window.__REDUX_DEVTOOLS_EXTENSION__)
             ) {
-                devtools.push(window.__REDUX_DEVTOOLS_EXTENSION__());
+                devtools.push(
+                    window.__REDUX_DEVTOOLS_EXTENSION__({ actionSanitizer }),
+                );
             } else if (app.config.loggerMiddleware) {
                 devtools.push(applyMiddleware(logger));
             }
@@ -396,6 +398,14 @@ function createWatcher(namespace, key, effect, app) {
 
 function isWindow(win) {
     return typeof win === 'object' && win !== null && win.window === win;
+}
+
+function actionSanitizer(action) {
+    return typeof action.payload === 'object' &&
+        action.payload.target &&
+        action.payload.type
+        ? { ...action, payload: '<<EVENT>>' }
+        : action;
 }
 
 export function assert(condition, message) {
