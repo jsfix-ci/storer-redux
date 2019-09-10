@@ -40,6 +40,7 @@ export function createStorer(config = {}) {
         sagaMiddleware: createSagaMiddleware(),
         namespace: [],
         config: _config,
+        tasks: {},
     };
     //integrate loading
     if (app.config.integrateLoading) {
@@ -60,6 +61,10 @@ export function createStorer(config = {}) {
         _addModel(app, model);
     }
 
+    function removeModel(model) {
+        _removeModel(app, model);
+    }
+
     init(app);
 
     if (isArray(_config.model)) {
@@ -71,6 +76,7 @@ export function createStorer(config = {}) {
     const { replaceReducer, ...other } = app.store;
     return {
         addModel,
+        removeModel,
         hasNamespace(str) {
             return app.namespace.indexOf(str) > -1;
         },
@@ -142,7 +148,31 @@ function _addModel(app, model) {
 
     //create saga
     if (isPlainObject(_model.effects)) {
-        app.sagaMiddleware.run(createSaga(app, _model));
+        const task = app.sagaMiddleware.run(createSaga(app, _model));
+        app.tasks[_model.namespace] = task;
+    }
+}
+
+/**
+ * remove model
+ *
+ * @param app
+ * @param config
+ * @param model
+ * @private
+ */
+function _removeModel(app, model) {
+    assert(isPlainObject(model), 'model should be a object');
+    const { namespace } = model;
+
+    const task = app.tasks[namespace];
+    const reducer = app.reducers[namespace];
+    if (task instanceof Object && typeof task.cancel === 'function') {
+        task.cancel();
+    }
+    if (typeof reducer === 'function') {
+        app.reducers[namespace] = clearState;
+        app.store.replaceReducer(getCombinedReducer(app));
     }
 }
 
@@ -406,6 +436,10 @@ function actionSanitizer(action) {
         action.payload.type
         ? { ...action, payload: '<<EVENT>>' }
         : action;
+}
+
+function clearState(state) {
+    return {};
 }
 
 export function assert(condition, message) {

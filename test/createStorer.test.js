@@ -193,9 +193,7 @@ test('CreateStorer with effectStatusWatch', (done) => {
             stateCurrent._effectStatus[model1Namespace + '/changeCount'] ===
                 getStatus(stateCurrent, model1Namespace + '/changeCount'),
         ).toBe(true);
-        expect(
-                getStatus(stateCurrent, model1Namespace + '/none'),
-        ).toEqual({});
+        expect(getStatus(stateCurrent, model1Namespace + '/none')).toEqual({});
 
         done();
     }, 1000);
@@ -263,6 +261,25 @@ test('addModel', () => {
     expect(() => {
         storer.addModel({ namespace: 'asdfasdf', state: {} });
     }).toThrow();
+});
+
+test('RemoveModel', () => {
+    const storer = createStorer({
+        model: [model1],
+    });
+    console.log('----------------==================================');
+    console.log(storer.getState());
+    expect(storer.getState()[model1Namespace].name).toBe('rose');
+
+    storer.dispatch(actionCreators.dispachAction({ value: 'success' }));
+    expect(storer.getState()[model1Namespace].dispachAction).toBe('success');
+
+    storer.dispatch(actionCreators.updateState({ name: 'success2' }));
+    expect(storer.getState()[model1Namespace].name).toBe('success2');
+
+    storer.removeModel(model1);
+    expect(storer.getState()[model1Namespace]).toEqual({});
+    // console.log(storer.getState());
 });
 
 test('hasNamespace', () => {
