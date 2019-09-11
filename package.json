@@ -1,6 +1,6 @@
 {
   "name": "storer-redux",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "storer with redux",
   "main": "dist/index.js",
   "scripts": {
