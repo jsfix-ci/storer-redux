@@ -1,12 +1,20 @@
 import { applyMiddleware, combineReducers, compose, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 import * as sagaEffects from 'redux-saga/effects';
-import { isFunction, isPlainObject, isString, extend, isArray } from 'lodash';
+import {
+    isFunction,
+    isPlainObject,
+    isString,
+    extend,
+    isArray,
+    cloneDeep,
+} from 'lodash';
 import { produce } from 'immer';
 import {
     loadingReducer,
     loadingReducerImmer,
     loading_name,
+    ACTION_LOADINGS_REMOVE,
 } from './loading.reducer';
 import {
     effectStatusReducer,
@@ -15,9 +23,11 @@ import {
     status_fail,
     status_loading,
     status_success,
+    ACTION_EFFECTS_REMOVE,
 } from './effectStatus.reducer';
 import { logger } from './logger';
 const { takeEvery, takeLatest, throttle } = sagaEffects;
+const EMPTY_STATE = null;
 
 export function createStorer(config = {}) {
     const { reducers, ...rest } = config;
@@ -145,7 +155,7 @@ function _addModel(app, model) {
     const _reducer = wrapReducers(app, _model);
     app.reducers = extend({}, app.reducers, { [_model.namespace]: _reducer });
     app.store.replaceReducer(getCombinedReducer(app));
-
+    // debugger
     //create saga
     if (isPlainObject(_model.effects)) {
         const task = app.sagaMiddleware.run(createSaga(app, _model));
@@ -164,15 +174,32 @@ function _addModel(app, model) {
 function _removeModel(app, model) {
     assert(isPlainObject(model), 'model should be a object');
     const { namespace } = model;
+    const index = app.namespace.indexOf(namespace);
+    if (index > -1) {
+        app.namespace.splice(index, 1);
+    }
 
     const task = app.tasks[namespace];
     const reducer = app.reducers[namespace];
     if (task instanceof Object && typeof task.cancel === 'function') {
         task.cancel();
+        delete app.tasks[namespace];
     }
     if (typeof reducer === 'function') {
         app.reducers[namespace] = clearState;
         app.store.replaceReducer(getCombinedReducer(app));
+    }
+    if (app.config.integrateLoading) {
+        app.store.dispatch({
+            type: ACTION_LOADINGS_REMOVE,
+            payload: { namespace },
+        });
+    }
+    if (app.config.effectStatusWatch) {
+        app.store.dispatch({
+            type: ACTION_EFFECTS_REMOVE,
+            payload: { namespace },
+        });
     }
 }
 
@@ -233,20 +260,26 @@ function wrapReducers(app, model) {
         config: { initialState, separator, integrateImmer },
     } = app;
     const { namespace, reducers } = model;
+
     const _initialState = extend(
         {},
-        model.state,
+        cloneDeep(model.state),
         isPlainObject(initialState) ? initialState[namespace] : {},
     );
     return function(state, action) {
         const _state =
-            state === undefined
+            state === undefined || state === EMPTY_STATE
                 ? integrateImmer
-                    ? produce(state === undefined ? {} : state, (draft) => {
-                          // change _initialState to readonly
+                    ? produce(
+                          state === undefined || state === EMPTY_STATE
+                              ? {}
+                              : state,
+                          (draft) => {
+                              // change _initialState to readonly
 
-                          Object.assign(draft, _initialState);
-                      })
+                              Object.assign(draft, _initialState);
+                          },
+                      )
                     : _initialState
                 : state;
 
@@ -438,8 +471,8 @@ function actionSanitizer(action) {
         : action;
 }
 
-function clearState(state) {
-    return {};
+function clearState() {
+    return EMPTY_STATE;
 }
 
 export function assert(condition, message) {

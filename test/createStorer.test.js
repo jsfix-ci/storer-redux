@@ -12,8 +12,17 @@ import {
     actionCreators,
     actionTypes,
 } from './model-test';
-import { createStore } from 'redux';
+import {
+    model as model2,
+    actionCreators as model2ActionCreators,
+    actionTypes as model2ActionTypes,
+} from './model-test-immer.js';
 import { isFunction, uniqWith, isEqual } from 'lodash';
+import { createStore } from 'redux';
+import { cloneDeep } from 'lodash';
+
+const model3 = cloneDeep(model1);
+model3.namespace = 'model3';
 
 let err = null,
     errorCount = 0;
@@ -265,9 +274,11 @@ test('addModel', () => {
 
 test('RemoveModel', () => {
     const storer = createStorer({
-        model: [model1],
+        model: [model1, model3],
+        effectStatusWatch: true,
+        integrateLoading: true,
     });
-    console.log('----------------==================================');
+
     console.log(storer.getState());
     expect(storer.getState()[model1Namespace].name).toBe('rose');
 
@@ -276,10 +287,56 @@ test('RemoveModel', () => {
 
     storer.dispatch(actionCreators.updateState({ name: 'success2' }));
     expect(storer.getState()[model1Namespace].name).toBe('success2');
+    storer.dispatch(actionCreators.changeCount({ count: '333' }));
+    expect(isStatusLoading(storer.getState(), actionTypes.changeCount)).toBe(
+        true,
+    );
+    expect(storer.getState().loading.effects[actionTypes.changeCount]).toBe(
+        true,
+    );
+    storer.dispatch({
+        type: `${model3.namespace}/changeCount`,
+        payload: { count: '333' },
+    });
 
     storer.removeModel(model1);
-    expect(storer.getState()[model1Namespace]).toEqual({});
+    expect(isStatusLoading(storer.getState(), actionTypes.changeCount)).toBe(
+        false,
+    );
+    expect(storer.getState().loading.effects[actionTypes.changeCount]).toBe(
+        undefined,
+    );
+    expect(storer.getState()[model1Namespace]).toEqual(null);
     // console.log(storer.getState());
+    storer.addModel(model1);
+
+    expect(storer.getState()[model1Namespace].name).toBe('rose');
+
+    const storer2 = createStorer({
+        model: [model2,model3],
+        integrateImmer: true,
+        effectStatusWatch: true,
+        integrateLoading: true,
+    });
+    storer2.dispatch(model2ActionCreators.changeCount({ count: '333' }));
+    expect(
+        isStatusLoading(storer2.getState(), model2ActionTypes.changeCount),
+    ).toBe(true);
+    expect(
+        storer2.getState().loading.effects[model2ActionTypes.changeCount],
+    ).toBe(true);
+    storer2.dispatch({
+        type: `${model3.namespace}/changeCount`,
+        payload: { count: '333' },
+    });
+
+    storer2.removeModel(model2);
+    expect(
+        isStatusLoading(storer2.getState(), model2ActionTypes.changeCount),
+    ).toBe(false);
+    expect(
+        storer2.getState().loading.effects[model2ActionTypes.changeCount],
+    ).toBe(undefined);
 });
 
 test('hasNamespace', () => {

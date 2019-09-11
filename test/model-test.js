@@ -1,11 +1,8 @@
 import { getActionCreatorsAndTypes } from '../src/index';
+import asyncFn from '../utils/asyncFn.js'
 export const namespace = 'model1';
 
-function asyncFn(n) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => resolve(n), 100);
-    });
-}
+
 
 function mockAsyncError(error) {
     return new Promise((resolve, reject) => {
